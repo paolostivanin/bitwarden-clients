@@ -20,6 +20,7 @@ import { UserId } from "@bitwarden/common/types/guid";
 
 import { SshAgentPromptType } from "../../autofill/models/ssh-agent-setting";
 import { isDev } from "../../utils";
+import { TrayIconStyle } from "../models/domain/tray-icon-style";
 import { ModalModeState, WindowState } from "../models/domain/window-state";
 
 export const HARDWARE_ACCELERATION = new KeyDefinition<boolean>(
@@ -37,6 +38,14 @@ const WINDOW_KEY = new KeyDefinition<WindowState | null>(DESKTOP_SETTINGS_DISK, 
 const RUN_IN_BACKGROUND_KEY = new KeyDefinition<boolean>(DESKTOP_SETTINGS_DISK, "runInBackground", {
   deserializer: (b) => b,
 });
+
+const TRAY_ICON_STYLE_KEY = new KeyDefinition<TrayIconStyle>(
+  DESKTOP_SETTINGS_DISK,
+  "trayIconStyle",
+  {
+    deserializer: (s) => s,
+  },
+);
 
 const OPEN_AT_LOGIN_KEY = new KeyDefinition<boolean>(DESKTOP_SETTINGS_DISK, "openAtLogin", {
   deserializer: (b) => b,
@@ -95,6 +104,12 @@ export class DesktopSettingsService {
    * and closing the window quits the application.
    */
   runInBackground$ = this.runInBackground.state$.pipe(map((v) => v ?? !isDev()));
+
+  private readonly trayIconStyleState = this.stateProvider.getGlobal(TRAY_ICON_STYLE_KEY);
+  /**
+   * The application setting for the style of the system tray icon. Only applied on Linux.
+   */
+  trayIconStyle$ = this.trayIconStyleState.state$.pipe(map((v) => v ?? TrayIconStyle.Color));
 
   private readonly openAtLoginState = this.stateProvider.getGlobal(OPEN_AT_LOGIN_KEY);
   /**
@@ -174,6 +189,14 @@ export class DesktopSettingsService {
    */
   async setRunInBackground(value: boolean) {
     await this.runInBackground.update(() => value);
+  }
+
+  /**
+   * Sets the style of the system tray icon.
+   * @param value The tray icon style to use.
+   */
+  async setTrayIconStyle(value: TrayIconStyle) {
+    await this.trayIconStyleState.update(() => value);
   }
 
   /**

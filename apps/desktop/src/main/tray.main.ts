@@ -9,6 +9,7 @@ import { I18nService } from "@bitwarden/common/platform/abstractions/i18n.servic
 import { MessagingService } from "@bitwarden/common/platform/abstractions/messaging.service";
 import { BiometricsService } from "@bitwarden/key-management";
 
+import { TrayIconStyle } from "../platform/models/domain/tray-icon-style";
 import { DesktopSettingsService } from "../platform/services/desktop-settings.service";
 import { isDev } from "../utils";
 
@@ -73,6 +74,17 @@ export class TrayMain {
     }
 
     this.contextMenu = Menu.buildFromTemplate(menuItemOptions);
+
+    // The tray icon style is only configurable on Linux. Subscribed before runInBackground$
+    // so the tray is usually created with the chosen icon; setImage covers a later change.
+    if (this.isLinux()) {
+      this.desktopSettingsService.trayIconStyle$.subscribe((style) => {
+        this.icon = this.getLinuxIcon(style);
+        if (this.tray != null) {
+          this.tray.setImage(this.icon);
+        }
+      });
+    }
 
     // The tray icon is shown only while "keep running in the background" is enabled.
     // React to the setting so toggling it shows/removes the tray without a restart.
@@ -193,6 +205,17 @@ export class TrayMain {
 
   private isLinux() {
     return process.platform === "linux";
+  }
+
+  private getLinuxIcon(style: TrayIconStyle): string {
+    switch (style) {
+      case TrayIconStyle.White:
+        return path.join(__dirname, "/images/tray-icon-white.png");
+      case TrayIconStyle.Black:
+        return path.join(__dirname, "/images/tray-icon-black.png");
+      default:
+        return path.join(__dirname, "/images/icon.png");
+    }
   }
 
   private closeWindow() {

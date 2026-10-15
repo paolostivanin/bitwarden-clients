@@ -2116,6 +2116,24 @@
   "runInBackgroundDescMac": {
     "message": "When you close the window, Bitwarden is accessible from the menu bar. Recommended when using the SSH agent or browser integration."
   },
+  "trayIconStyle": {
+    "message": "Tray icon"
+  },
+  "trayIconStyleDesc": {
+    "message": "Use a monochrome icon to match your system tray."
+  },
+  "trayIconStyleColor": {
+    "message": "Color",
+    "description": "Tray icon style option that shows the full-color Bitwarden icon."
+  },
+  "trayIconStyleWhite": {
+    "message": "White",
+    "description": "Tray icon style option that shows a white monochrome Bitwarden icon."
+  },
+  "trayIconStyleBlack": {
+    "message": "Black",
+    "description": "Tray icon style option that shows a black monochrome Bitwarden icon."
+  },
   "openAtLogin": {
     "message": "Start automatically on login"
   },

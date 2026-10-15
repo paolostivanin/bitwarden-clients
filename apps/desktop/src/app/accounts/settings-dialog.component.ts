@@ -76,6 +76,7 @@ import { DesktopAutotypeMvpService } from "../../autofill/services/desktop-autot
 import { DesktopAutotypeService } from "../../autofill/services/desktop-autotype.service";
 import { DesktopPremiumUpgradePromptService } from "../../billing/services/desktop-premium-upgrade-prompt.service";
 import { DesktopBiometricsService } from "../../key-management/biometrics/desktop.biometrics.service";
+import { TrayIconStyle } from "../../platform/models/domain/tray-icon-style";
 import { DesktopSettingsService } from "../../platform/services/desktop-settings.service";
 import { NativeMessagingManifestService } from "../services/native-messaging-manifest.service";
 
@@ -150,6 +151,7 @@ export class SettingsDialogComponent implements OnInit {
   protected readonly themeOptions: Option<string>[];
   protected readonly clearClipboardOptions: Option<string>[];
   protected readonly sshAgentPromptBehaviorOptions: Option<string>[];
+  protected readonly trayIconStyleOptions: Option<string>[];
 
   protected readonly isWindows: boolean;
   protected readonly isLinux: boolean;
@@ -200,6 +202,7 @@ export class SettingsDialogComponent implements OnInit {
     showQuickCopyActions: false,
     // App Settings
     runInBackground: false,
+    trayIconStyle: this.formBuilder.control<TrayIconStyle>(TrayIconStyle.Color),
     openAtLogin: false,
     enableHardwareAcceleration: true,
     enableSshAgent: false,
@@ -273,6 +276,11 @@ export class SettingsDialogComponent implements OnInit {
         value: SshAgentPromptType.RememberUntilLock,
       },
     ];
+    this.trayIconStyleOptions = [
+      { label: this.i18nService.t("trayIconStyleColor"), value: TrayIconStyle.Color },
+      { label: this.i18nService.t("trayIconStyleWhite"), value: TrayIconStyle.White },
+      { label: this.i18nService.t("trayIconStyleBlack"), value: TrayIconStyle.Black },
+    ];
   }
 
   async ngOnInit() {
@@ -308,6 +316,7 @@ export class SettingsDialogComponent implements OnInit {
         this.vaultCopyButtonsService.showQuickCopyActions$,
       ),
       runInBackground: await firstValueFrom(this.desktopSettingsService.runInBackground$),
+      trayIconStyle: await firstValueFrom(this.desktopSettingsService.trayIconStyle$),
       openAtLogin: await firstValueFrom(this.desktopSettingsService.openAtLogin$),
       enableDuckDuckGoBrowserIntegration: await firstValueFrom(
         this.desktopAutofillSettingsService.enableDuckDuckGoBrowserIntegration$,
@@ -389,6 +398,13 @@ export class SettingsDialogComponent implements OnInit {
     this.form.controls.sshAgentPromptBehavior.valueChanges
       .pipe(
         concatMap(async (value: SshAgentPromptType) => this.saveSshAgentPromptBehavior(value)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    this.form.controls.trayIconStyle.valueChanges
+      .pipe(
+        concatMap(async (value) => this.saveTrayIconStyle(value)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
@@ -635,6 +651,10 @@ export class SettingsDialogComponent implements OnInit {
 
   protected async saveRunInBackground() {
     await this.desktopSettingsService.setRunInBackground(this.form.value.runInBackground);
+  }
+
+  private async saveTrayIconStyle(newValue: TrayIconStyle) {
+    await this.desktopSettingsService.setTrayIconStyle(newValue);
   }
 
   private async saveLocale(newValue: string) {

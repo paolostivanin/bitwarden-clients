@@ -118,6 +118,14 @@
           <bit-hint>{{ runInBackgroundDescText }}</bit-hint>
         </bit-form-control>
 
+        @if (isLinux && form.value.runInBackground) {
+          <bit-form-field>
+            <bit-label>{{ "trayIconStyle" | i18n }}</bit-label>
+            <bit-select formControlName="trayIconStyle" [items]="trayIconStyleOptions" />
+            <bit-hint>{{ "trayIconStyleDesc" | i18n }}</bit-hint>
+          </bit-form-field>
+        }
+
         @if (showOpenAtLoginOption) {
           <bit-form-control>
             <input

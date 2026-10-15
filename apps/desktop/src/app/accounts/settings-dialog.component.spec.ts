@@ -65,6 +65,7 @@ import { DesktopAutofillService } from "../../autofill/services/desktop-autofill
 import { DesktopAutotypeMvpService } from "../../autofill/services/desktop-autotype-mvp.service";
 import { DesktopAutotypeService } from "../../autofill/services/desktop-autotype.service";
 import { DesktopBiometricsService } from "../../key-management/biometrics/desktop.biometrics.service";
+import { TrayIconStyle } from "../../platform/models/domain/tray-icon-style";
 import { DesktopSettingsService } from "../../platform/services/desktop-settings.service";
 import { NativeMessagingManifestService } from "../services/native-messaging-manifest.service";
 
@@ -206,6 +207,7 @@ describe("SettingsDialogComponent", () => {
     autofillSettingsServiceAbstraction.clearClipboardDelay$ = of(null);
     desktopSettingsService.minimizeOnCopy$ = of(false);
     desktopSettingsService.runInBackground$ = of(false);
+    desktopSettingsService.trayIconStyle$ = of(TrayIconStyle.Color);
     desktopSettingsService.openAtLogin$ = of(false);
     desktopSettingsService.hardwareAcceleration$ = of(false);
     desktopSettingsService.sshAgentEnabled$ = of(false);
@@ -1117,6 +1119,61 @@ describe("SettingsDialogComponent", () => {
     });
   });
 
+  describe("tray icon style", () => {
+    const createComponentForDevice = async (device: DeviceType) => {
+      platformUtilsService.getDevice.mockReturnValue(device);
+
+      // Recreate component to apply the correct device
+      fixture = TestBed.createComponent(SettingsDialogComponent);
+      component = fixture.componentInstance;
+
+      await component.ngOnInit();
+      fixture.detectChanges();
+    };
+
+    const queryTrayIconStyleSelect = () =>
+      fixture.debugElement.query(By.css("bit-select[formControlName='trayIconStyle']"));
+
+    afterEach(() => {
+      platformUtilsService.getDevice.mockReset();
+    });
+
+    it("shows the tray icon select on linux when running in the background", async () => {
+      desktopSettingsService.runInBackground$ = of(true);
+
+      await createComponentForDevice(DeviceType.LinuxDesktop);
+
+      expect(queryTrayIconStyleSelect()).not.toBeNull();
+    });
+
+    it("hides the tray icon select on linux when not running in the background", async () => {
+      desktopSettingsService.runInBackground$ = of(false);
+
+      await createComponentForDevice(DeviceType.LinuxDesktop);
+
+      expect(queryTrayIconStyleSelect()).toBeNull();
+    });
+
+    it.each([
+      ["windows", DeviceType.WindowsDesktop],
+      ["mac", DeviceType.MacOsDesktop],
+    ])("hides the tray icon select on %s", async (_, device) => {
+      desktopSettingsService.runInBackground$ = of(true);
+
+      await createComponentForDevice(device);
+
+      expect(queryTrayIconStyleSelect()).toBeNull();
+    });
+
+    it("loads the saved tray icon style", async () => {
+      desktopSettingsService.trayIconStyle$ = of(TrayIconStyle.Black);
+
+      await createComponentForDevice(DeviceType.LinuxDesktop);
+
+      expect(component["form"].controls.trayIconStyle.value).toBe(TrayIconStyle.Black);
+    });
+  });
+
   describe("desktop autotype", () => {
     it("autotype should be hidden on mac os", async () => {
       // Set OS
@@ -1474,6 +1531,16 @@ describe("SettingsDialogComponent", () => {
       expect(desktopSettingsService.setSshAgentPromptBehavior).toHaveBeenLastCalledWith(
         SshAgentPromptType.Never,
       );
+    });
+  });
+
+  describe("trayIconStyle valueChanges", () => {
+    it("saves the new tray icon style when changed", async () => {
+      await component.ngOnInit();
+
+      component["form"].controls.trayIconStyle.setValue(TrayIconStyle.White);
+
+      expect(desktopSettingsService.setTrayIconStyle).toHaveBeenLastCalledWith(TrayIconStyle.White);
     });
   });
 
